@@ -94,6 +94,7 @@ const PiAuth = (() => {
       });
       const app = await login.json();
       const appUser = app.user;
+      console.log("Login UID:", appUser.uid);
       const rawBal = user.balance ?? user.wallet_balance ?? user.wallet?.balance ?? null;
       S.piSaldo = await fetchAppBalance(appUser.uid);
       setStatus('Login berhasil', 'ok');
@@ -122,14 +123,12 @@ const PiAuth = (() => {
 
 async function fetchAppBalance(uid) {  const r = await fetch('/api/wallet?action=balance&uid=' + uid);  const d = await r.json();  return d.appBalance || 0;}
   async function refreshPiBalance() {
-    const token = sessionStorage.getItem('pi_access_token');
-    if (!token) { toast('Login ulang untuk refresh saldo'); return null; }
-    const bal = await fetchPiBalance(token);
-    if (bal !== null) {
-      S.piSaldo = parseFloat(bal) || 0;
-      refresh();
-      console.log('[PiAuth] Saldo Pi Testnet diperbarui:', S.piSaldo, 'π');
-    }
+    if (!S.user?.uid) return null;
+    console.log("Refresh UID:", S.user.uid);
+    const bal = await fetchAppBalance(S.user.uid);
+    S.piSaldo = parseFloat(bal) || 0;
+    refresh();
+    console.log("[PiAuth] Saldo aplikasi diperbarui:", S.piSaldo);
     return bal;
   }
 
