@@ -88,7 +88,7 @@ const PiAuth = (() => {
       if (!me.ok) throw new Error('Validasi gagal: HTTP ' + me.status);
       const user = await me.json();
       const rawBal = user.balance ?? user.wallet_balance ?? user.wallet?.balance ?? null;
-      S.piSaldo = rawBal !== null ? (parseFloat(rawBal) || 0) : 0;
+      S.piSaldo = await fetchAppBalance(user.uid);
       setStatus('Login berhasil', 'ok');
       onSuccess(user, auth.accessToken);
     } catch (err) {
@@ -113,6 +113,7 @@ const PiAuth = (() => {
     }, 500);
   }
 
+async function fetchAppBalance(uid) {  const r = await fetch('/api/wallet?action=balance&uid=' + uid);  const d = await r.json();  return d.appBalance || 0;}
   async function refreshPiBalance() {
     const token = sessionStorage.getItem('pi_access_token');
     if (!token) { toast('Login ulang untuk refresh saldo'); return null; }
@@ -139,7 +140,7 @@ const PiAuth = (() => {
         if (sk) { try { Object.assign(S.kyc, JSON.parse(sk)); } catch (_) {} }
         if (!u.isDemo) {
           const token = sessionStorage.getItem('pi_access_token');
-          if (token) fetchPiBalance(token).then(bal => { if (bal !== null) { S.piSaldo = parseFloat(bal) || 0; refresh(); } });
+          if (u.uid) fetchAppBalance(u.uid).then(bal => { S.piSaldo = parseFloat(bal) || 0; refresh(); });
         }
         go('home'); return;
       } catch (_) { sessionStorage.removeItem('pi_user'); }
