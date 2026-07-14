@@ -81,12 +81,7 @@ const PiAuth = (() => {
         }
       );
       if (!auth?.accessToken) throw new Error('Tidak ada access token');
-      setStatus('Mengambil data wallet Pi Testnet…');
-      const me = await fetch('https://api.minepi.com/v2/me', {
-        headers: { Authorization: 'Bearer ' + auth.accessToken }
-      });
-      if (!me.ok) throw new Error('Validasi gagal: HTTP ' + me.status);
-      const user = await me.json();
+      setStatus('Login ke Ekamatho…');
       const login = await fetch('/api/auth', {
         method:'POST',
         headers:{'Content-Type':'application/json'},
@@ -95,7 +90,6 @@ const PiAuth = (() => {
       const app = await login.json();
       const appUser = app.user;
       console.log("Login UID:", appUser.uid);
-      const rawBal = user.balance ?? user.wallet_balance ?? user.wallet?.balance ?? null;
       S.piSaldo = await fetchAppBalance(appUser.uid);
       setStatus('Login berhasil', 'ok');
       onSuccess(appUser, auth.accessToken);
