@@ -16,8 +16,8 @@ const TopUp = (() => {
 
     if (S.isDemo || typeof Pi === 'undefined') {
       pStep(1,'act','Pi.createPayment()','Membuat payment di Pi Network'); await wait(900); pStep(1,'done');
-      pStep(2,'act','Backend Approve','/api/pi-payment → approve'); await wait(800); pStep(2,'done');
-      pStep(3,'act','Backend Complete','/api/pi-payment → complete'); await wait(800); pStep(3,'done');
+      pStep(2,'act','Backend Approve','/api/pi → approve'); await wait(800); pStep(2,'done');
+      pStep(3,'act','Backend Complete','/api/pi → complete'); await wait(800); pStep(3,'done');
       pStep(4,'act','Saldo bertambah','Pi Platform konfirmasi'); await wait(600); pStep(4,'done');
       S.piSaldo = parseFloat((S.piSaldo + amt).toFixed(4));
       refresh(); resetTU();
@@ -32,13 +32,13 @@ const TopUp = (() => {
       await new Promise((res, rej) => {
         Pi.createPayment(payData, {
           onReadyForServerApproval: async (paymentId) => {
-            pStep(1,'done'); pStep(2,'act','Backend Approve','/api/pi-payment');
-            try { await callPi({ action:'approve', paymentId }); } catch (e) { console.warn(e); }
+            pStep(1,'done'); pStep(2,'act','Backend Approve','/api/pi');
+            try { await callPi({ action:'approve', paymentId, uid:S.user.uid }); } catch (e) { console.warn(e); }
           },
           onReadyForServerCompletion: async (paymentId, txid) => {
-            pStep(2,'done'); pStep(3,'act','Backend Complete','/api/pi-payment');
+            pStep(2,'done'); pStep(3,'act','Backend Complete','/api/pi');
             try {
-              await callPi({ action:'complete', paymentId, txid, meta:{ type:'topup', piAmount:amt } });
+              await callPi({ action:'complete', paymentId, txid, uid:S.user.uid, meta:{ type:'topup', piAmount:amt } });
               pStep(3,'done'); pStep(4,'act','Saldo diperbarui','Mengambil saldo terbaru dari Pi Testnet');
               const token = sessionStorage.getItem('pi_access_token');
               if (token) { await PiAuth.refreshPiBalance(); } else { S.piSaldo = parseFloat((S.piSaldo+amt).toFixed(4)); }
@@ -51,7 +51,7 @@ const TopUp = (() => {
         });
       });
       btn.disabled = false; btn.textContent = '➕ Top Up via Pi Network';
-      showSuccess({ ttl:'Top Up Berhasil', sub:'+'+amt+' π masuk Dompet Pi', type:'Top Up Pi', dest:'Dompet Pi', pi:'+'+amt.toFixed(4)+' π', idr:'Rp '+fmt(amt*CFG.RATE), via:'Pi Network · /api/pi-payment', tx:'Lihat Vercel Logs' });
+      showSuccess({ ttl:'Top Up Berhasil', sub:'+'+amt+' π masuk Dompet Pi', type:'Top Up Pi', dest:'Dompet Pi', pi:'+'+amt.toFixed(4)+' π', idr:'Rp '+fmt(amt*CFG.RATE), via:'Pi Network · /api/pi', tx:'Lihat Vercel Logs' });
     } catch (err) {
       btn.disabled = false; btn.textContent = '➕ Top Up via Pi Network';
       if (err.message === 'CANCELLED') toast('Top Up dibatalkan');
@@ -95,7 +95,7 @@ const Payment = (() => {
 
     if (S.isDemo || typeof Pi === 'undefined') {
       pStep(1,'act','Pi.createPayment()','Membuat payment di Pi Network'); await wait(900);
-      pStep(1,'done'); pStep(2,'act','Pi Platform approve+complete','/api/pi-payment'); await wait(1000);
+      pStep(1,'done'); pStep(2,'act','Pi Platform approve+complete','/api/pi'); await wait(1000);
       pStep(2,'done'); pStep(3,'act','TransFi Offramp','Pi → IDR · KYC check'); await wait(1100);
       pStep(3,'done'); pStep(4,'act','Payout ke merchant','Bank/QRIS via TransFi'); await wait(800); pStep(4,'done');
       S.piSaldo = parseFloat((S.piSaldo-piT).toFixed(4));
@@ -116,13 +116,13 @@ const Payment = (() => {
       const result = await new Promise((res, rej) => {
         Pi.createPayment(payData, {
           onReadyForServerApproval: async (paymentId) => {
-            pStep(1,'done'); pStep(2,'act','Pi Platform Approve','/api/pi-payment');
-            try { await callPi({ action:'approve', paymentId }); } catch (e) { console.warn(e); }
+            pStep(1,'done'); pStep(2,'act','Pi Platform Approve','/api/pi');
+            try { await callPi({ action:'approve', paymentId, uid:S.user.uid }); } catch (e) { console.warn(e); }
           },
           onReadyForServerCompletion: async (paymentId, txid) => {
             pStep(2,'done'); pStep(3,'act','TransFi Offramp','Pi → IDR · /api/transfi');
             try {
-              const r = await callPi({ action:'complete', paymentId, txid, meta:{ ...payData.metadata, paymentId } });
+              const r = await callPi({ action:'complete', paymentId, txid, uid:S.user.uid, meta:{ ...payData.metadata, paymentId } });
               pStep(3,'done'); pStep(4,'act','Payout ke merchant','Bank/QRIS via TransFi');
               await wait(700); pStep(4,'done');
               const token = sessionStorage.getItem('pi_access_token');

@@ -67,11 +67,16 @@ const PiAuth = (() => {
         async (inc) => {
           console.warn('[Auth] Incomplete payment:', inc.identifier);
           try {
-            await fetch('/api/pi-payment', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ action: 'complete', paymentId: inc.identifier, txid: inc.transaction?.txid || '' })
-            });
+            await fetch('/api/pi?action=complete', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ 
+    action: 'complete',
+    paymentId: inc.identifier,
+    txid: inc.transaction?.txid || '',
+    uid: auth.user.uid
+  })
+});
           } catch (e) { console.warn('[Auth] complete incomplete:', e); }
         }
       );

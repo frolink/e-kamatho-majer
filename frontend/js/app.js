@@ -71,8 +71,16 @@ function go(id) {
 
 // ── BACKEND HELPERS ───────────────────────────────────────────────────────────
 async function callPi(body) {
-  const r = await fetch('/api/pi-payment', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
-  const d = await r.json(); if (!r.ok) throw new Error(d.error || 'Backend error '+r.status); return d;
+  const action = body.action;
+  const r = await fetch('/api/pi?action=' + action, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(body)
+  });
+
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.error || 'Backend error ' + r.status);
+  return d;
 }
 
 // ── PROCESSING STEPS ──────────────────────────────────────────────────────────
