@@ -79,6 +79,7 @@ async function complete(req, res) {
   await piClient.completePayment(paymentId, txid);
   await store.savePiPaymentCompleted(paymentId, { paymentId, uid, amount: payment.amount, txid });
   await store.creditAppBalance(uid, payment.amount);
+  console.log('Balance credited:', uid, payment.amount);
   await store.addTransaction({ uid, type: 'pi_completed', name: 'Pi Payment selesai', amountPi: payment.amount, txid, paymentId });
 
   const user = await store.getUser(uid);
