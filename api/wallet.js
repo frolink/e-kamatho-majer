@@ -23,6 +23,7 @@ module.exports = async (req, res) => {
   if (!uid) return res.status(400).json({ error: 'uid wajib diisi' });
 
   if (action === 'balance') {
+    console.log("Wallet balance:", uid, await store.getAppBalance(uid));
     return res.json({ appBalance: await store.getAppBalance(uid) });
   }
   if (action === 'history') {
