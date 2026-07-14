@@ -87,10 +87,17 @@ const PiAuth = (() => {
       });
       if (!me.ok) throw new Error('Validasi gagal: HTTP ' + me.status);
       const user = await me.json();
+      const login = await fetch('/api/auth', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ accessToken: auth.accessToken })
+      });
+      const app = await login.json();
+      const appUser = app.user;
       const rawBal = user.balance ?? user.wallet_balance ?? user.wallet?.balance ?? null;
-      S.piSaldo = await fetchAppBalance(user.uid);
+      S.piSaldo = await fetchAppBalance(appUser.uid);
       setStatus('Login berhasil', 'ok');
-      onSuccess(user, auth.accessToken);
+      onSuccess(appUser, auth.accessToken);
     } catch (err) {
       console.error('[Auth]', err);
       setStatus('Gagal: ' + (err.message || 'Unknown error'), 'err');
@@ -145,7 +152,7 @@ async function fetchAppBalance(uid) {  const r = await fetch('/api/wallet?action
         go('home'); return;
       } catch (_) { sessionStorage.removeItem('pi_user'); }
     }
-    setTimeout(() => { if (typeof Pi !== 'undefined') signIn(); }, 800);
+    // Auto login disabled
   });
 
   return { signIn, demo, refreshPiBalance };
