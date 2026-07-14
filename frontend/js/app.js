@@ -39,7 +39,7 @@ function refresh() {
   set('wIdr',    'Rp '+fmt(idr));
   set('cvPiInfo','Saldo Pi: '+pi.toFixed(2)+' π');
   set('byIdrInfo','Saldo Rupiah: Rp '+fmt(idr));
-  set('piSrcLbl', CFG.SANDBOX ? 'Dompet Pi · Testnet' : 'Dompet Pi · Mainnet');
+  set('piSrcLbl', CFG.SANDBOX ? 'Dompet Ekamatho' : 'Dompet Ekamatho');
   set('kycStatusTag', S.kyc.verified ? '✓ KYC Terverifikasi' : 'KYC belum lengkap');
 
   if (S.kyc.verified) {

@@ -22,7 +22,7 @@ const TopUp = (() => {
       S.piSaldo = parseFloat((S.piSaldo + amt).toFixed(4));
       refresh(); resetTU();
       btn.disabled = false; btn.textContent = '➕ Top Up via Pi Network';
-      showSuccess({ ttl:'Top Up Berhasil', sub:'+'+amt+' π masuk Dompet Pi', type:'Top Up Pi (Demo)', dest:'Dompet Pi', pi:'+'+amt.toFixed(4)+' π', idr:'Rp '+fmt(amt*CFG.RATE), via:'Pi Network · Demo', tx:'demo-'+Date.now() });
+      showSuccess({ ttl:'Top Up Berhasil', sub:'+'+amt+' π masuk Dompet Ekamatho', type:'Top Up Pi (Demo)', dest:'Dompet Ekamatho', pi:'+'+amt.toFixed(4)+' π', idr:'Rp '+fmt(amt*CFG.RATE), via:'Pi Network · Demo', tx:'demo-'+Date.now() });
       return;
     }
 
@@ -39,7 +39,7 @@ const TopUp = (() => {
             pStep(2,'done'); pStep(3,'act','Backend Complete','/api/pi');
             try {
               await callPi({ action:'complete', paymentId, txid, uid:S.user.uid, meta:{ type:'topup', piAmount:amt } });
-              pStep(3,'done'); pStep(4,'act','Saldo diperbarui','Mengambil saldo terbaru dari Pi Testnet');
+              pStep(3,'done'); pStep(4,'act','Saldo diperbarui','Mengambil saldo terbaru dari Dompet Ekamatho');
               const token = sessionStorage.getItem('pi_access_token');
               if (token) { await PiAuth.refreshPiBalance(); } else { S.piSaldo = parseFloat((S.piSaldo+amt).toFixed(4)); }
               await wait(500); pStep(4,'done');
@@ -51,7 +51,7 @@ const TopUp = (() => {
         });
       });
       btn.disabled = false; btn.textContent = '➕ Top Up via Pi Network';
-      showSuccess({ ttl:'Top Up Berhasil', sub:'+'+amt+' π masuk Dompet Pi', type:'Top Up Pi', dest:'Dompet Pi', pi:'+'+amt.toFixed(4)+' π', idr:'Rp '+fmt(amt*CFG.RATE), via:'Pi Network · /api/pi', tx:'Lihat Vercel Logs' });
+      showSuccess({ ttl:'Top Up Berhasil', sub:'+'+amt+' π masuk Dompet Ekamatho', type:'Top Up Pi', dest:'Dompet Ekamatho', pi:'+'+amt.toFixed(4)+' π', idr:'Rp '+fmt(amt*CFG.RATE), via:'Pi Network · /api/pi', tx:'Lihat Vercel Logs' });
     } catch (err) {
       btn.disabled = false; btn.textContent = '➕ Top Up via Pi Network';
       if (err.message === 'CANCELLED') toast('Top Up dibatalkan');
