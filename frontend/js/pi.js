@@ -66,6 +66,7 @@ const PiAuth = (() => {
       await new Promise(r=>setTimeout(r,200));
       setStatus('Menunggu persetujuan di Pi Browser…');
       setBtn('<div class="btn-pi-mark">π</div> Menunggu…', true);
+      sessionStorage.clear();
       const auth = await Pi.authenticate(['username','payments'], async (inc) => {
         console.warn('[Auth] Incomplete payment:', inc.identifier);
         try {
