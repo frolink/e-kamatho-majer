@@ -77,7 +77,7 @@ const PiAuth = (() => {
         } catch(e){ console.warn('[Auth] complete incomplete:', e); }
       });
       if(!auth?.accessToken) throw new Error('Tidak ada access token');
-      toast(JSON.stringify(auth));
+      console.log("AUTH =", auth);
       setStatus('Login ke Ekamatho…');
       const login=await fetch('/api/auth',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ accessToken: auth.accessToken }) });
       const app=await login.json();
