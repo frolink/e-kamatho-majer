@@ -158,52 +158,35 @@
     </div>
   </div>
 
- <div class="wallet-card">
-
-  <div class="wallet-top">
-    <div>
-      <div class="wallet-title">Dompet Ekamatho</div>
-      <div class="wallet-user" id="uname">Pioneer</div>
+  <div class="balance-hero">
+    <div class="bh-label">
+      <div class="bh-dot"></div>
+      <span id="piSrcLbl">Dompet Ekamatho</span>
+      <span onclick="PiAuth.refreshPiBalance()" style="margin-left:auto;font-size:10px;color:var(--amber);cursor:pointer;opacity:.7;" title="Refresh saldo dari wallet Pi">↻ Refresh</span>
     </div>
-
-    <div class="wallet-logo">π</div>
+    <div class="bh-amount">
+      <span class="bh-num" id="hPi">0.00</span>
+      <span class="bh-unit">π</span>
+    </div>
+    <div class="bh-idr" id="hPiIdr">≈ <span>Rp 0</span> · Rp 14.000/π</div>
+    <div class="bh-rule"></div>
+    <div class="bh-idr-row">
+      <div class="bh-idr-left">
+        <span>Dompet Rupiah</span>
+        <div class="bh-idr-num" id="hIdr">Rp 0</div>
+      </div>
+      <div style="text-align:right;">
+        <span style="font-size:9px;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;">Via TransFi</span>
+        <div style="font-size:10px;color:var(--muted);margin-top:3px;" id="kycStatusTag">KYC belum lengkap</div>
+      </div>
+    </div>
+    <div class="bh-actions">
+      <button class="bh-btn primary" onclick="go('payment')">⚡ Bayar</button>
+      <button class="bh-btn outline" onclick="go('topup')">➕ Top Up</button>
+      <button class="bh-btn emerald" onclick="go('payout')">🏦 Payout</button>
+    </div>
   </div>
 
-  <div class="wallet-balance">
-
-    <div class="wallet-main">
-      <div class="wallet-label">
-        Saldo Pi
-      </div>
-
-      <div class="wallet-value" id="hPi">
-        0.00 π
-      </div>
-
-      <div class="wallet-sub" id="hPiIdr">
-        ≈ Rp 0
-      </div>
-    </div>
-
-    <div class="wallet-divider"></div>
-
-    <div class="wallet-main">
-      <div class="wallet-label">
-        Saldo Rupiah
-      </div>
-
-      <div class="wallet-value emerald" id="hIdr">
-        Rp 0
-      </div>
-
-      <div class="wallet-sub" id="kycStatusTag">
-        Belum KYC
-      </div>
-    </div>
-
-  </div>
-
-</div>
   <div class="flow-strip">
     <div class="fs-label">Arsitektur pembayaran</div>
     <div class="fs-nodes">
@@ -315,29 +298,37 @@
     <div class="back-btn" onclick="go('home')">←</div>
     <div class="page-title">Bayar Merchant</div>
   </div>
-  <div class="inner-card idr" style="margin:0 20px 14px;">
-    <div class="ic-eyebrow">Saldo Rupiah tersedia</div>
-    <div class="ic-num" style="font-size:28px;color:var(--emerald);" id="payIdrBal">Rp 0</div>
-    <div class="ic-sub">Dari hasil konversi Pi</div>
-  </div>
-  <div id="kycWarnPay" class="note rose" style="margin:0 20px 14px;display:none;">
-    <span class="note-tag nt-rose">Konversi</span>
-    Saldo Rupiah kosong. <span style="color:var(--amber);cursor:pointer;font-weight:600;" onclick="go('convert')">Konversi Pi → Rupiah dulu →</span>
+  <div class="step-bar">
+    <div class="step-item"><div class="step-dot sd-active" id="sd1">1</div><div class="step-label active">Detail</div></div>
+    <div class="step-line" id="sl1"></div>
+    <div class="step-item"><div class="step-dot sd-idle" id="sd2">2</div><div class="step-label">Pi SDK</div></div>
+    <div class="step-line" id="sl2"></div>
+    <div class="step-item"><div class="step-dot sd-idle" id="sd3">3</div><div class="step-label">TransFi</div></div>
+    <div class="step-line" id="sl3"></div>
+    <div class="step-item"><div class="step-dot sd-idle" id="sd4">✓</div><div class="step-label">Selesai</div></div>
   </div>
   <div class="form-group">
     <div>
-      <label class="field-label">Total belanja (IDR)</label>
+      <label class="field-label">Total belanja dari struk kasir</label>
       <div class="input-row">
         <span class="input-prefix">Rp</span>
         <input type="number" id="payIdr" placeholder="0" oninput="calcPay(this.value)"/>
       </div>
-      <div class="field-hint" id="byIdrInfo">Saldo Rupiah: Rp 0</div>
+      <div class="field-hint">Ketik angka yang terlihat di layar kasir.</div>
     </div>
     <div id="payPrev" style="display:none;">
-      <div class="breakdown">
+      <div class="amount-preview">
+        <div class="ap-label">Kamu membayar dengan Pi</div>
+        <div class="ap-amount"><span class="ap-num" id="payPiR">0</span><span class="ap-unit">π</span></div>
+        <div class="ap-sub" id="payDtl">—</div>
+      </div>
+      <div class="breakdown" style="margin-top:8px;">
         <div class="bd-row"><span class="l">Total IDR</span><span class="v emerald" id="pfIDR">—</span></div>
-        <div class="bd-row"><span class="l">Saldo sebelum</span><span class="v" id="pfBal">—</span></div>
-        <div class="bd-row"><span class="l">Saldo setelah</span><span class="v amber" id="pfAft">—</span></div>
+        <div class="bd-row"><span class="l">Pi untuk belanja</span><span class="v" id="pfPi">—</span></div>
+        <div class="bd-row"><span class="l">Fee TransFi (2%)</span><span class="v" id="pfFee">—</span></div>
+        <div class="bd-divider"></div>
+        <div class="bd-row"><span class="l">Total Pi terdebit</span><span class="v amber" id="pfTot">—</span></div>
+        <div class="bd-row"><span class="l">Saldo setelah bayar</span><span class="v" id="pfAft">—</span></div>
       </div>
     </div>
     <div>
@@ -345,68 +336,20 @@
       <div class="merch-grid">
         <div class="merch-opt on" onclick="selMP(this,'Indomaret')"><span class="merch-opt-ico">🏪</span><span class="merch-opt-name">Indomaret</span></div>
         <div class="merch-opt" onclick="selMP(this,'Alfamart')"><span class="merch-opt-ico">🛒</span><span class="merch-opt-name">Alfamart</span></div>
-        <div class="merch-opt" onclick="selMP(this,'PLN')"><span class="merch-opt-ico">⚡</span><span class="merch-opt-name">PLN</span></div>
+        <div class="merch-opt" onclick="selMP(this,'Lawson')"><span class="merch-opt-ico">🏬</span><span class="merch-opt-name">Lawson</span></div>
         <div class="merch-opt" onclick="selMP(this,'Lainnya')"><span class="merch-opt-ico">🏢</span><span class="merch-opt-name">Lainnya</span></div>
       </div>
     </div>
     <div class="note blue">
       <span class="note-tag nt-blue">TransFi</span>
-      Pembayaran langsung dari Saldo Rupiah via TransFi Payout. Tidak membuka Pi Wallet.
+      Pi → Pi Platform (approve+complete) → TransFi Offramp (Pi→IDR) → payout ke rekening KYC merchant.
+    </div>
+    <div id="kycWarnPay" class="note rose" style="display:none;">
+      <span class="note-tag nt-rose">KYC</span>
+      KYC belum lengkap. Selesaikan KYC & rekening sebelum bayar merchant.
     </div>
   </div>
-  <button class="action-btn emerald-btn" onclick="Payment.exec()">⚡ Bayar dari Saldo Rupiah</button>
-</div>
-
-<!-- CONVERT -->
-<div class="screen" id="convert">
-  <div class="page-header">
-    <div class="back-btn" onclick="go('home')">←</div>
-    <div class="page-title">Konversi Pi → Rupiah</div>
-  </div>
-  <div class="kyc-alert">
-    <div class="ka-title">🛡️ Verifikasi KYC & AML</div>
-    <div class="ka-desc">Nama pemilik akun Pi harus sesuai nama rekening bank. Pastikan data KYC sudah diisi.</div>
-  </div>
-  <div class="inner-card pi" style="margin:0 20px 14px;">
-    <div class="ic-eyebrow">Saldo Pi</div>
-    <div class="ic-num" style="font-size:28px;" id="wPi">0.00 π</div>
-  </div>
-  <div class="form-group">
-    <div>
-      <label class="field-label">Jumlah Pi yang dikonversi</label>
-      <div class="input-row"><span class="input-prefix">π</span><input type="number" id="cvPi" placeholder="0.00" oninput="calcCV(this.value)"/></div>
-      <div class="field-hint" id="cvPiInfo">Saldo Pi: 0 π</div>
-    </div>
-    <div class="conv-arrow"><div class="ca-line"></div><div class="ca-ico">↓</div><div class="ca-line"></div><div style="font-size:10px;color:var(--muted);">fee 2% · Rp 14.000/π</div></div>
-    <div>
-      <label class="field-label">Estimasi Rupiah diterima</label>
-      <div class="input-row"><span class="input-prefix">Rp</span><input type="text" id="cvIdr" placeholder="0" readonly style="opacity:.6;"/></div>
-    </div>
-    <div class="note blue"><span class="note-tag nt-blue">TransFi</span>Pi → IDR via TransFi Offramp. Saldo Rupiah masuk setelah TransFi konfirmasi (webhook).</div>
-  </div>
-  <button class="action-btn" id="cvBtn" onclick="Convert.exec()">💱 Konversi Pi → Rupiah</button>
-</div>
-
-<!-- WITHDRAW -->
-<div class="screen" id="withdraw">
-  <div class="page-header">
-    <div class="back-btn" onclick="go('home')">←</div>
-    <div class="page-title">Tarik Rekening</div>
-  </div>
-  <div class="inner-card idr" style="margin:0 20px 14px;">
-    <div class="ic-eyebrow">Saldo Rupiah</div>
-    <div class="ic-num" style="font-size:28px;color:var(--emerald);" id="wdIdrBal">Rp 0</div>
-    <div class="ic-sub">Siap ditarik ke rekening bank</div>
-  </div>
-  <div class="form-group">
-    <div>
-      <label class="field-label">Jumlah penarikan (IDR)</label>
-      <div class="input-row"><span class="input-prefix">Rp</span><input type="number" id="wdAmt" placeholder="0" oninput="chkWD(this.value)"/></div>
-      <div class="field-hint" id="wdInfo">Saldo tersedia: Rp 0</div>
-    </div>
-    <div class="note blue"><span class="note-tag nt-blue">TransFi</span>Transfer langsung ke rekening KYC terdaftar. AML hanya dicek ulang jika rekening berbeda.</div>
-  </div>
-  <button class="action-btn emerald-btn" onclick="Withdraw.exec()">🏦 Tarik ke Rekening Bank</button>
+  <button class="action-btn" onclick="Payment.exec()">⚡ Bayar via TransFi</button>
 </div>
 
 <!-- PROCESSING -->
@@ -562,13 +505,14 @@
 
 <!-- BOTTOM NAV -->
 <div class="bottom-nav" id="bnav" style="display:none;">
-  <div class="nav-item on" id="bn-home"    onclick="go('home')">   <span class="nav-ico">⌂</span><span class="nav-lbl">Home</span></div>
-  <div class="nav-item" id="bn-topup"      onclick="go('topup')">  <span class="nav-ico">➕</span><span class="nav-lbl">Top Up</span></div>
-  <div class="nav-item" id="bn-convert"    onclick="go('convert')"><span class="nav-ico">💱</span><span class="nav-lbl">Konversi</span></div>
-  <div class="nav-item" id="bn-payment"    onclick="go('payment')"><span class="nav-ico">⚡</span><span class="nav-lbl">Bayar</span></div>
-  <div class="nav-item" id="bn-withdraw"   onclick="go('withdraw')"><span class="nav-ico">🏦</span><span class="nav-lbl">Tarik</span></div>
-  <div class="nav-item" id="bn-history"    onclick="go('history')"><span class="nav-ico">↻</span><span class="nav-lbl">Riwayat</span></div>
-  <div class="nav-item" id="bn-kyc"        onclick="go('kyc')">    <span class="nav-ico">🛡</span><span class="nav-lbl">KYC</span></div>
+  <div class="nav-item on" id="bn-home" onclick="go('home')"><span class="nav-ico">⌂</span><span class="nav-lbl">Home</span></div>
+  <div class="nav-item" id="bn-history" onclick="go('history')"><span class="nav-ico">↻</span><span class="nav-lbl">Riwayat</span></div>
+  <div class="nav-center" onclick="go('payment')">
+    <div class="nav-center-btn">⚡</div>
+    <span class="nav-center-lbl">Bayar</span>
+  </div>
+  <div class="nav-item" id="bn-wallet" onclick="go('wallet')"><span class="nav-ico">⇄</span><span class="nav-lbl">Konversi</span></div>
+  <div class="nav-item" id="bn-kyc" onclick="go('kyc')"><span class="nav-ico">🛡</span><span class="nav-lbl">KYC</span></div>
 </div>
 
 </div><!-- /app -->
