@@ -1,197 +1,194 @@
 /**
- * lib/store.js
- * -----------------------------------------------------------------------
- * Penyimpanan sederhana berbasis file JSON.
+ * backend/services/store.js — Vercel KV edition (refactor v2)
  *
- * ⚠️ PENTING UNTUK VERCEL:
- * Serverless function di Vercel TIDAK punya filesystem persisten. Tiap
- * invocation bisa jatuh ke instance berbeda, dan /tmp bisa hilang kapan
- * saja. File ini membuat project BISA di-deploy & dites end-to-end tanpa
- * setup database dulu — tapi saldo/riwayat TIDAK dijamin konsisten di
- * production dengan trafik nyata.
+ * Perubahan dari v1:
+ *   - User kini punya piBalance  (saldo Pi di app, bukan Rupiah)
+ *   - User kini punya idrBalance (saldo Rupiah hasil konversi TransFi)
+ *   - kycStatus: { verifiedForIdr, bankName, accountNumber, accountHolderName, verifiedAt }
  *
- * SEBELUM PRODUKSI SUNGGUHAN: ganti isi file ini dengan database asli
- * (Vercel Postgres, Vercel KV, Supabase, dll). Semua fungsi sengaja
- * `async` walau isinya sinkron, supaya api/*.js tidak perlu diubah saat
- * store.js diganti ke DB asli.
- * -----------------------------------------------------------------------
+ * Setup: npm install @vercel/kv && vercel env pull
  */
-const fs = require('fs');
-const path = require('path');
-
-const DB_FILE = process.env.VERCEL
-  ? path.join('/tmp', 'ekamatho-db.json')
-  : path.join(__dirname, '..', 'data', 'db.json');
-
-function ensureDir() {
-  const dir = path.dirname(DB_FILE);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-}
+const { kv } = require('@vercel/kv');
 
 function defaultMerchants() {
-  // Data rekening/VA di bawah ini CONTOH — ganti dengan nomor VA/rekening
-  // resmi hasil kerja sama/pendaftaran nyata dengan masing-masing merchant
-  // sebelum dipakai sungguhan. Untuk Indomaret khususnya, pembayaran via
-  // Virtual Account biasanya digenerate per-transaksi oleh penyedia VA
-  // mereka (mis. lewat kerja sama dengan bank/payment gateway) — nomor
-  // statis di sini hanya placeholder demo.
   return {
-    'global_indomaret': {
-      merchantId: 'global_indomaret', scope: 'global', name: 'Indomaret',
-      category: 'Retail', paymentCode: 'virtual_account',
-      bankName: 'BRI', accountNumber: '777081234567890', accountHolderName: 'PT Indomarco Prismatama'
-    },
-    'global_alfamart': {
-      merchantId: 'global_alfamart', scope: 'global', name: 'Alfamart',
-      category: 'Retail', paymentCode: 'virtual_account',
-      bankName: 'Permata', accountNumber: '888091234567890', accountHolderName: 'PT Sumber Alfaria Trijaya'
-    },
-    'global_pln': {
-      merchantId: 'global_pln', scope: 'global', name: 'PLN (Token Listrik)',
-      category: 'Utilitas', paymentCode: 'virtual_account',
-      bankName: 'BNI', accountNumber: '888888012345678', accountHolderName: 'PT PLN (Persero)'
-    }
+    global_indomaret: { merchantId:'global_indomaret', scope:'global', name:'Indomaret', category:'Retail', paymentCode:'virtual_account', bankName:'BRI', accountNumber:'777081234567890', accountHolderName:'PT Indomarco Prismatama' },
+    global_alfamart:  { merchantId:'global_alfamart',  scope:'global', name:'Alfamart',  category:'Retail', paymentCode:'virtual_account', bankName:'Permata', accountNumber:'888091234567890', accountHolderName:'PT Sumber Alfaria Trijaya' },
+    global_pln:       { merchantId:'global_pln', scope:'global', name:'PLN (Token Listrik)', category:'Utilitas', paymentCode:'virtual_account', bankName:'BNI', accountNumber:'888888012345678', accountHolderName:'PT PLN (Persero)' },
   };
 }
-
-function loadDb() {
-  ensureDir();
-  if (!fs.existsSync(DB_FILE)) {
-    const initial = { users: {}, piPayments: {}, transfiOrders: {}, payouts: {}, withdrawals: {}, merchants: defaultMerchants(), transactions: [] };
-    fs.writeFileSync(DB_FILE, JSON.stringify(initial, null, 2));
-    return initial;
-  }
-  try {
-    const db = JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
-    if (!db.merchants || Object.keys(db.merchants).length === 0) db.merchants = defaultMerchants();
-    return db;
-  }
-  catch { return { users: {}, piPayments: {}, transfiOrders: {}, payouts: {}, withdrawals: {}, merchants: defaultMerchants(), transactions: [] }; }
+async function ensureDefaultMerchants() {
+  const ex = await kv.get('merchants:global');
+  if (ex && ex.length > 0) return;
+  const m = defaultMerchants(); const ids = [];
+  await Promise.all(Object.values(m).map(async v => { await kv.set('merchant:' + v.merchantId, v); ids.push(v.merchantId); }));
+  await kv.set('merchants:global', ids);
 }
 
-function saveDb(db) { ensureDir(); fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2)); }
-
-// ---------- USERS ----------
+// ── USERS ────────────────────────────────────────────────────────────────────
 async function upsertUser({ uid, username, piAddress }) {
-  const db = loadDb();
-  const existing = db.users[uid] || { appBalance: 0 };
-  db.users[uid] = { ...existing, uid, username, piAddress: piAddress || existing.piAddress || null };
-  saveDb(db);
-  return db.users[uid];
+  const ex = (await kv.get('user:' + uid)) || { piBalance: 0, idrBalance: 0 };
+  // Migrasi: kalau masih pakai appBalance lama, pindahkan ke piBalance
+  if (ex.appBalance !== undefined && ex.piBalance === undefined) {
+    ex.piBalance = ex.appBalance; delete ex.appBalance;
+  }
+  const u = { ...ex, uid, username, piAddress: piAddress || ex.piAddress || null,
+    piBalance:  Number(ex.piBalance  || 0),
+    idrBalance: Number(ex.idrBalance || 0),
+    kycStatus:  ex.kycStatus || { verifiedForIdr: false },
+  };
+  await kv.set('user:' + uid, u);
+  return u;
 }
-async function getUser(uid) { return loadDb().users[uid] || null; }
-async function getAppBalance(uid) { const db = loadDb(); return db.users[uid] ? db.users[uid].appBalance : 0; }
+async function getUser(uid) { return (await kv.get('user:' + uid)) || null; }
 
-async function creditAppBalance(uid, amount) {
-  const db = loadDb();
-  if (!db.users[uid]) db.users[uid] = { uid, appBalance: 0 };
-  db.users[uid].appBalance = Number(db.users[uid].appBalance || 0) + Number(amount);
-  saveDb(db);
-  return db.users[uid].appBalance;
+async function getPiBalance(uid) {
+  const u = await kv.get('user:' + uid);
+  if (!u) return 0;
+  // migrasi saldo lama
+  if (u.appBalance !== undefined && u.piBalance === undefined) return Number(u.appBalance || 0);
+  return Number(u.piBalance || 0);
 }
-async function debitAppBalance(uid, amount) {
-  const db = loadDb();
-  if (!db.users[uid]) db.users[uid] = { uid, appBalance: 0 };
-  const current = Number(db.users[uid].appBalance || 0);
-  if (current < amount) throw new Error('Saldo Rupiah tidak cukup');
-  db.users[uid].appBalance = current - Number(amount);
-  saveDb(db);
-  return db.users[uid].appBalance;
+async function getIdrBalance(uid) {
+  const u = await kv.get('user:' + uid);
+  return u ? Number(u.idrBalance || 0) : 0;
+}
+// Alias lama untuk backward compat (wallet.js lama mungkin masih pakai getAppBalance)
+async function getAppBalance(uid) { return getIdrBalance(uid); }
+
+async function creditPiBalance(uid, amount) {
+  const u = (await kv.get('user:' + uid)) || { uid, piBalance: 0, idrBalance: 0, kycStatus: { verifiedForIdr: false } };
+  if (u.appBalance !== undefined) { u.piBalance = u.appBalance; delete u.appBalance; }
+  u.piBalance = Number(u.piBalance || 0) + Number(amount);
+  await kv.set('user:' + uid, u);
+  return u.piBalance;
+}
+async function debitPiBalance(uid, amount) {
+  const u = (await kv.get('user:' + uid)) || { uid, piBalance: 0, idrBalance: 0 };
+  if (u.appBalance !== undefined) { u.piBalance = u.appBalance; delete u.appBalance; }
+  const cur = Number(u.piBalance || 0);
+  if (cur < Number(amount)) throw new Error('Saldo Pi tidak cukup');
+  u.piBalance = cur - Number(amount);
+  await kv.set('user:' + uid, u);
+  return u.piBalance;
+}
+async function creditIdrBalance(uid, amount) {
+  const u = (await kv.get('user:' + uid)) || { uid, piBalance: 0, idrBalance: 0 };
+  u.idrBalance = Number(u.idrBalance || 0) + Number(amount);
+  await kv.set('user:' + uid, u);
+  return u.idrBalance;
+}
+async function debitIdrBalance(uid, amount) {
+  const u = (await kv.get('user:' + uid)) || { uid, piBalance: 0, idrBalance: 0 };
+  const cur = Number(u.idrBalance || 0);
+  if (cur < Number(amount)) throw new Error('Saldo Rupiah tidak cukup');
+  u.idrBalance = cur - Number(amount);
+  await kv.set('user:' + uid, u);
+  return u.idrBalance;
+}
+// Alias lama
+async function creditAppBalance(uid, amount) { return creditIdrBalance(uid, amount); }
+async function debitAppBalance(uid, amount)  { return debitIdrBalance(uid, amount); }
+
+// ── KYC STATUS ───────────────────────────────────────────────────────────────
+async function setKycVerified(uid, { bankName, accountNumber, accountHolderName, piName }) {
+  const u = (await kv.get('user:' + uid)) || { uid, piBalance: 0, idrBalance: 0 };
+  u.kycStatus = { verifiedForIdr: true, bankName, accountNumber, accountHolderName, piName, verifiedAt: new Date().toISOString() };
+  await kv.set('user:' + uid, u);
+  return u.kycStatus;
+}
+async function getKycStatus(uid) {
+  const u = await kv.get('user:' + uid);
+  return u ? (u.kycStatus || { verifiedForIdr: false }) : { verifiedForIdr: false };
+}
+async function revokeKycVerified(uid) {
+  const u = (await kv.get('user:' + uid)) || { uid, piBalance: 0, idrBalance: 0 };
+  u.kycStatus = { verifiedForIdr: false };
+  await kv.set('user:' + uid, u);
 }
 
-// ---------- PI PAYMENTS (khusus Top Up, jalur resmi Pi Testnet) ----------
-async function getPiPayment(paymentId) { return loadDb().piPayments[paymentId] || null; }
-async function savePiPaymentApproved(paymentId, data) {
-  const db = loadDb();
-  db.piPayments[paymentId] = { ...(db.piPayments[paymentId] || {}), ...data, status: 'approved' };
-  saveDb(db);
-  return db.piPayments[paymentId];
+// ── PI PAYMENTS ───────────────────────────────────────────────────────────────
+async function getPiPayment(id) { return (await kv.get('payment:' + id)) || null; }
+async function savePiPaymentApproved(id, data) {
+  const u = { ...(await kv.get('payment:' + id) || {}), ...data, status: 'approved' };
+  await kv.set('payment:' + id, u); return u;
 }
-async function savePiPaymentCompleted(paymentId, data) {
-  const db = loadDb();
-  db.piPayments[paymentId] = { ...(db.piPayments[paymentId] || {}), ...data, status: 'completed' };
-  saveDb(db);
-  return db.piPayments[paymentId];
+async function savePiPaymentCompleted(id, data) {
+  const u = { ...(await kv.get('payment:' + id) || {}), ...data, status: 'completed' };
+  await kv.set('payment:' + id, u); return u;
 }
 
-// ---------- TRANSFI OFFRAMP ORDERS (Pi -> IDR, dipicu setelah Top Up) ----------
+// ── KONVERSI ORDERS (Pi→IDR via TransFi Offramp, dipicu dari /api/convert) ──
 async function createTransfiOrder(order) {
-  const db = loadDb();
-  db.transfiOrders[order.orderId] = { ...order, status: order.status || 'initiated' };
-  saveDb(db);
-  return db.transfiOrders[order.orderId];
+  const d = { ...order, status: order.status || 'initiated' };
+  await kv.set('transfiOrder:' + order.orderId, d);
+  if (order.piPaymentId) await kv.set('transfiByPi:' + order.piPaymentId, order.orderId);
+  if (order.uid)         await kv.set('transfiByConvert:' + order.convertId, order.orderId);
+  return d;
 }
-async function getTransfiOrder(orderId) { return loadDb().transfiOrders[orderId] || null; }
-async function updateTransfiOrder(orderId, data) {
-  const db = loadDb();
-  db.transfiOrders[orderId] = { ...(db.transfiOrders[orderId] || {}), ...data };
-  saveDb(db);
-  return db.transfiOrders[orderId];
+async function getTransfiOrder(id) { return (await kv.get('transfiOrder:' + id)) || null; }
+async function updateTransfiOrder(id, data) {
+  const u = { ...(await kv.get('transfiOrder:' + id) || {}), ...data };
+  await kv.set('transfiOrder:' + id, u); return u;
 }
-async function findTransfiOrderByPiPaymentId(paymentId) {
-  const db = loadDb();
-  return Object.values(db.transfiOrders).find(o => o.piPaymentId === paymentId) || null;
-}
-
-// ---------- PAYOUTS (saldo Rupiah -> merchant terdaftar, Bank/VA) ----------
-async function createPayout(payout) {
-  const db = loadDb();
-  db.payouts[payout.payoutId] = { ...payout, status: payout.status || 'pending' };
-  saveDb(db);
-  return db.payouts[payout.payoutId];
-}
-async function getPayout(payoutId) { return loadDb().payouts[payoutId] || null; }
-async function updatePayout(payoutId, data) {
-  const db = loadDb();
-  db.payouts[payoutId] = { ...(db.payouts[payoutId] || {}), ...data };
-  saveDb(db);
-  return db.payouts[payoutId];
+async function findTransfiOrderByPiPaymentId(pid) {
+  const oid = await kv.get('transfiByPi:' + pid);
+  return oid ? getTransfiOrder(oid) : null;
 }
 
-// ---------- WITHDRAWALS (saldo Rupiah -> rekening bank pribadi user, dengan AML) ----------
-async function createWithdrawal(w) {
-  const db = loadDb();
-  db.withdrawals[w.withdrawalId] = { ...w, status: w.status || 'pending' };
-  saveDb(db);
-  return db.withdrawals[w.withdrawalId];
-}
-async function getWithdrawal(withdrawalId) { return loadDb().withdrawals[withdrawalId] || null; }
-async function updateWithdrawal(withdrawalId, data) {
-  const db = loadDb();
-  db.withdrawals[withdrawalId] = { ...(db.withdrawals[withdrawalId] || {}), ...data };
-  saveDb(db);
-  return db.withdrawals[withdrawalId];
-}
+// ── PAYOUTS ───────────────────────────────────────────────────────────────────
+async function createPayout(p) { const d={...p,status:p.status||'pending'}; await kv.set('payout:' + p.payoutId, d); return d; }
+async function getPayout(id)   { return (await kv.get('payout:' + id)) || null; }
+async function updatePayout(id, data) { const u={...(await kv.get('payout:'+id)||{}), ...data}; await kv.set('payout:'+id, u); return u; }
 
-// ---------- MERCHANTS (terdaftar dengan rekening/VA asli, bukan data contoh) ----------
+// ── WITHDRAWALS ───────────────────────────────────────────────────────────────
+async function createWithdrawal(w) { const d={...w,status:w.status||'pending'}; await kv.set('withdrawal:'+w.withdrawalId, d); return d; }
+async function getWithdrawal(id)   { return (await kv.get('withdrawal:'+id)) || null; }
+async function updateWithdrawal(id, data) { const u={...(await kv.get('withdrawal:'+id)||{}), ...data}; await kv.set('withdrawal:'+id, u); return u; }
+
+// ── MERCHANTS ─────────────────────────────────────────────────────────────────
 async function createMerchant(m) {
-  const db = loadDb();
-  db.merchants[m.merchantId] = { ...m };
-  saveDb(db);
-  return db.merchants[m.merchantId];
+  await kv.set('merchant:' + m.merchantId, m);
+  if (m.scope === 'global') {
+    const idx = (await kv.get('merchants:global')) || [];
+    if (!idx.includes(m.merchantId)) { idx.push(m.merchantId); await kv.set('merchants:global', idx); }
+  } else if (m.ownerUid) {
+    const k = 'merchants:user:' + m.ownerUid;
+    const idx = (await kv.get(k)) || [];
+    if (!idx.includes(m.merchantId)) { idx.push(m.merchantId); await kv.set(k, idx); }
+  }
+  return m;
 }
-async function getMerchant(merchantId) { return loadDb().merchants[merchantId] || null; }
-// scope 'global' = tersedia untuk semua user (default bawaan app, mis. Indomaret).
-// selain itu, merchant milik uid tertentu saja yang melihatnya (custom warung pribadi).
+async function getMerchant(id) { await ensureDefaultMerchants(); return (await kv.get('merchant:' + id)) || null; }
 async function listMerchants(uid) {
-  const db = loadDb();
-  return Object.values(db.merchants).filter(m => m.scope === 'global' || m.ownerUid === uid);
+  await ensureDefaultMerchants();
+  const gids = (await kv.get('merchants:global')) || [];
+  const uids = uid ? (await kv.get('merchants:user:' + uid)) || [] : [];
+  const all  = [...new Set([...gids, ...uids])];
+  return (await Promise.all(all.map(id => kv.get('merchant:' + id)))).filter(Boolean);
 }
 
-// ---------- TRANSAKSI (riwayat gabungan) ----------
+// ── TRANSACTIONS ──────────────────────────────────────────────────────────────
 async function addTransaction(tx) {
-  const db = loadDb();
-  db.transactions.unshift({ ...tx, createdAt: new Date().toISOString() });
-  saveDb(db);
+  const k = 'transactions:' + tx.uid;
+  const list = (await kv.get(k)) || [];
+  list.unshift({ ...tx, createdAt: new Date().toISOString() });
+  if (list.length > 500) list.splice(500);
+  await kv.set(k, list);
 }
-async function listTransactions(uid) { return loadDb().transactions.filter(t => t.uid === uid); }
+async function listTransactions(uid) { return (await kv.get('transactions:' + uid)) || []; }
 
 module.exports = {
-  upsertUser, getUser, getAppBalance, creditAppBalance, debitAppBalance,
+  upsertUser, getUser,
+  getPiBalance, getIdrBalance, getAppBalance,
+  creditPiBalance, debitPiBalance,
+  creditIdrBalance, debitIdrBalance,
+  creditAppBalance, debitAppBalance,
+  setKycVerified, getKycStatus, revokeKycVerified,
   getPiPayment, savePiPaymentApproved, savePiPaymentCompleted,
   createTransfiOrder, getTransfiOrder, updateTransfiOrder, findTransfiOrderByPiPaymentId,
   createPayout, getPayout, updatePayout,
   createWithdrawal, getWithdrawal, updateWithdrawal,
   createMerchant, getMerchant, listMerchants,
-  addTransaction, listTransactions
+  addTransaction, listTransactions,
 };
