@@ -130,3 +130,13 @@ const PiAuth = (() => {
 
   return { signIn, demo, refreshBalance };
 })();
+
+function logout() {
+  sessionStorage.clear();
+
+  if (window.Pi && typeof Pi.unauthenticate === "function") {
+    Pi.unauthenticate();
+  }
+
+  location.reload();
+}
