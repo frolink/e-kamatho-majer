@@ -2,15 +2,15 @@
   "version": 2,
   "outputDirectory": "frontend",
   "routes": [
-    { "src": "/api/auth",     "dest": "/backend/routes/auth.js" },
-    { "src": "/api/health",   "dest": "/backend/routes/health.js" },
-    { "src": "/api/pi",       "dest": "/backend/routes/pi.js" },
-    { "src": "/api/convert",  "dest": "/backend/routes/convert.js" },
-    { "src": "/api/wallet",   "dest": "/backend/routes/wallet.js" },
+    { "src": "/api/auth", "dest": "/backend/routes/auth.js" },
+    { "src": "/api/health", "dest": "/backend/routes/health.js" },
+    { "src": "/api/pi", "dest": "/backend/routes/pi.js" },
+    { "src": "/api/convert", "dest": "/backend/routes/convert.js" },
+    { "src": "/api/wallet", "dest": "/backend/routes/wallet.js" },
     { "src": "/api/merchant", "dest": "/backend/routes/merchant.js" },
     { "src": "/api/withdraw", "dest": "/backend/routes/withdraw.js" },
-    { "src": "/api/transfi",  "dest": "/backend/routes/transfi.js" },
-    { "src": "/api/webhook",  "dest": "/backend/routes/webhook.js" },
-    { "src": "/(.*)",         "dest": "/$1" }
+    { "src": "/api/transfi", "dest": "/backend/routes/transfi.js" },
+    { "src": "/api/webhook", "dest": "/backend/routes/webhook.js" },
+    { "src": "/(.*)", "dest": "/$1" }
   ]
 }
