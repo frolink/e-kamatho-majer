@@ -99,7 +99,7 @@ async function initiate(req, res) {
   } catch (err) {
     // TransFi gagal → kembalikan piBalance, jangan hilangkan aset user
     await store.creditPiBalance(uid, amountPi);
-    console.error('[convert] TransFi offramp gagal:', err.response?.data || err.message);
+    console.error('[convert] TransFi offramp gagal:', JSON.stringify(err.response?.data, null, 2));
     return res.status(502).json({
       error: 'Konversi gagal diproses. Saldo Pi dikembalikan. Silakan coba lagi.',
     });
