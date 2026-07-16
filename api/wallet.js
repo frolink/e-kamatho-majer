@@ -23,7 +23,7 @@ module.exports = async (req, res) => {
     const idrBalance = await store.getIdrBalance(uid);
     const kycStatus  = await store.getKycStatus(uid);
     console.log('[wallet] balance', uid, { piBalance, idrBalance });
-    return res.json({ piBalance, idrBalance, kycStatus, appBalance: idrBalance }); // appBalance untuk backward compat
+    return res.json({ piBalance, idrBalance, kycStatus });
   }
   if (action === 'history') {
     return res.json({ transactions: await store.listTransactions(uid) });
