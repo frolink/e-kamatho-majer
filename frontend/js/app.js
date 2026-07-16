@@ -8,7 +8,7 @@
  *   - KYC state disederhanakan (kycVerified, kycData)
  */
 
-const CFG = { SANDBOX: true, RATE: 14000, FEE: 0.02, PI_VER: '2.0' };
+const CFG = { SANDBOX: true, RATE: 5000000, FEE: 0.02, PI_VER: '2.0' };
 
 const S = {
   piSaldo: 0,
@@ -39,7 +39,7 @@ function refresh() {
 
   // Home — dua kartu saldo
   set('hPi',     pi.toFixed(2) + ' π');
-  set('hPiIdr',  '≈ Rp ' + fmt(pi*CFG.RATE) + ' · Rp 14.000/π');
+  set('hPiIdr',  '≈ Rp ' + fmt(pi*CFG.RATE) + ' · Rp 5.000.000/π');
   set('hIdr',    'Rp ' + fmt(idr));
 
   // Top Up info
