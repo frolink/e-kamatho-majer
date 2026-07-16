@@ -8,7 +8,7 @@ module.exports = {
   PI_PLATFORM_BASE_URL: process.env.PI_PLATFORM_BASE_URL || 'https://api.minepi.com',
   PI_HORIZON_URL:       process.env.PI_HORIZON_URL       || 'https://api.testnet.minepi.com',
 
-  TRANSFI_BASE_URL:       process.env.TRANSFI_BASE_URL       || 'https://api-sandbox.transfi.com',
+  TRANSFI_BASE_URL:       process.env.TRANSFI_BASE_URL       || 'https://sandbox-api.transfi.com',
   TRANSFI_USERNAME:       process.env.TRANSFI_USERNAME        || '',
   TRANSFI_PASSWORD:       process.env.TRANSFI_PASSWORD        || '',
   TRANSFI_API_SECRET:     process.env.TRANSFI_API_SECRET      || '',
