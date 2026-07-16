@@ -95,7 +95,7 @@ const PiAuth = (() => {
   function demo() {
     setStatus('Masuk mode demo…');
     setTimeout(()=>{
-      S.piSaldo=125.50; S.idrSaldo=0; S.isDemo=true;
+      S.piSaldo=0; S.idrSaldo=0; S.isDemo=true;
       const user={ username:'demo_pioneer', uid:'demo-uid-000', email:'demo@pi.network', isDemo:true };
       S.user=user;
       document.getElementById('uav').textContent='D';
@@ -118,7 +118,7 @@ const PiAuth = (() => {
     if(c){
       try{
         const u=JSON.parse(c); S.user=u;
-        if(u.isDemo){ S.piSaldo=125.50; S.idrSaldo=0; S.isDemo=true; }
+        if(u.isDemo){ S.piSaldo=0; S.idrSaldo=0; S.isDemo=true; }
         document.getElementById('uav').textContent=(u.username||'P').charAt(0).toUpperCase();
         document.getElementById('uname').textContent='@'+u.username;
         const sk=sessionStorage.getItem('kyc_data');

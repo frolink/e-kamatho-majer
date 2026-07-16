@@ -27,26 +27,20 @@ async function ensureDefaultMerchants() {
 
 // ── USERS ────────────────────────────────────────────────────────────────────
 async function upsertUser({ uid, username, piAddress }) {
-  const ex = (await kv.get('user:' + uid)) || { piBalance: 0, idrBalance: 0 };
-  // Migrasi: kalau masih pakai appBalance lama, pindahkan ke piBalance
-  if (ex.appBalance !== undefined && ex.piBalance === undefined) {
-    ex.piBalance = ex.appBalance; delete ex.appBalance;
-  }
+  const ex = (await kv.get("user:" + uid)) || { piBalance: 0, idrBalance: 0 };
   const u = { ...ex, uid, username, piAddress: piAddress || ex.piAddress || null,
-    piBalance:  Number(ex.piBalance  || 0),
+    piBalance: Number(ex.piBalance || 0),
     idrBalance: Number(ex.idrBalance || 0),
-    kycStatus:  ex.kycStatus || { verifiedForIdr: false },
+    kycStatus: ex.kycStatus || { verifiedForIdr: false },
   };
-  await kv.set('user:' + uid, u);
+  await kv.set("user:" + uid, u);
   return u;
 }
-async function getUser(uid) { return (await kv.get('user:' + uid)) || null; }
+async function getUser(uid) { return (await kv.get("user:" + uid)) || null; }
 
 async function getPiBalance(uid) {
   const u = await kv.get('user:' + uid);
   if (!u) return 0;
-  // migrasi saldo lama
-  if (u.appBalance !== undefined && u.piBalance === undefined) return Number(u.appBalance || 0);
   return Number(u.piBalance || 0);
 }
 async function getIdrBalance(uid) {
@@ -58,14 +52,12 @@ async function getAppBalance(uid) { return getIdrBalance(uid); }
 
 async function creditPiBalance(uid, amount) {
   const u = (await kv.get('user:' + uid)) || { uid, piBalance: 0, idrBalance: 0, kycStatus: { verifiedForIdr: false } };
-  if (u.appBalance !== undefined) { u.piBalance = u.appBalance; delete u.appBalance; }
   u.piBalance = Number(u.piBalance || 0) + Number(amount);
   await kv.set('user:' + uid, u);
   return u.piBalance;
 }
 async function debitPiBalance(uid, amount) {
   const u = (await kv.get('user:' + uid)) || { uid, piBalance: 0, idrBalance: 0 };
-  if (u.appBalance !== undefined) { u.piBalance = u.appBalance; delete u.appBalance; }
   const cur = Number(u.piBalance || 0);
   if (cur < Number(amount)) throw new Error('Saldo Pi tidak cukup');
   u.piBalance = cur - Number(amount);

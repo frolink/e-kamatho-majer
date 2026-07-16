@@ -9,7 +9,7 @@
 const CONFIG = {
   PI_SANDBOX: true,
   API_BASE: '/api',
-  DEMO_MODE: true, // set false setelah backend deployed & env terisi
+  DEMO_MODE: false, // set false setelah backend deployed & env terisi
 };
 
 // Header standar — token Pi ditambahkan saat auth
@@ -70,7 +70,7 @@ const api = {
 };
 
 // ── DEMO MOCK ──────────────────────────────────────────────────────────────
-let _demoPi  = 248.75;
+let _demoPi  = 0;
 let _demoIdr = 0;
 
 async function mockBackend(path, body) {
