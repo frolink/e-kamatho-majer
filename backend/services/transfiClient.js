@@ -36,7 +36,7 @@ const axios = require('axios');
 const crypto = require('crypto');
 
 // Base URL resmi dari dokumentasi TransFi (BUKAN sandbox-api, tapi api-sandbox):
-const TRANSFI_BASE_URL = process.env.TRANSFI_BASE_URL || 'https://api-sandbox.transfi.com';
+const TRANSFI_BASE_URL = process.env.TRANSFI_BASE_URL || 'https://sandbox-api.transfi.com';
 const TRANSFI_USERNAME = process.env.TRANSFI_USERNAME; // dari displai.transfi.com -> Settings -> API Credentials
 const TRANSFI_PASSWORD = process.env.TRANSFI_PASSWORD; // pasangan Basic Auth, beda untuk sandbox vs production
 const TRANSFI_MID = process.env.TRANSFI_MID;
