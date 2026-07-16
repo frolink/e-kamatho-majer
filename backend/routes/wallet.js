@@ -1,32 +1,40 @@
 /**
- * /api/wallet — saldo Rupiah (hasil settle TransFi) & riwayat transaksi.
+ * /api/wallet — Saldo & riwayat transaksi pengguna.
+ *
+ * Endpoint ini adalah "jendela" yang dilihat frontend untuk menampilkan:
+ *   - Dompet Pi   : piBalance
+ *   - Dompet Rupiah: idrBalance
+ *   - Riwayat semua transaksi
+ *
  * Tidak memanggil Pi Platform API maupun TransFi API secara langsung —
- * murni membaca ledger di store.js yang diisi oleh pi.js (via webhook)
- * dan merchant.js.
+ * murni membaca ledger dari store.js yang diisi oleh route lain.
  *
  *   GET /api/wallet?action=balance&uid=...
  *   GET /api/wallet?action=history&uid=...
  */
-const store = require('../services/store');
-
-function setCors(res) {
-  res.setHeader('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-}
+const store          = require('../services/store');
+const { handleCors } = require('../middleware/cors');
 
 module.exports = async (req, res) => {
-  setCors(res);
-  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (handleCors(req, res, 'GET, OPTIONS')) return;
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
   const { uid, action } = req.query;
   if (!uid) return res.status(400).json({ error: 'uid wajib diisi' });
 
-  if (action === 'balance') {
-    return res.json({ appBalance: await store.getAppBalance(uid) });
+  try {
+    if (action === 'balance') {
+      const piBalance  = await store.getPiBalance(uid);
+      const idrBalance = await store.getIdrBalance(uid);
+      return res.json({ piBalance, idrBalance });
+    }
+    if (action === 'history') {
+      const transactions = await store.listTransactions(uid);
+      return res.json({ transactions });
+    }
+    return res.status(400).json({ error: 'Aksi tidak dikenal untuk /api/wallet' });
+  } catch (err) {
+    console.error('[wallet] error:', err.message);
+    return res.status(500).json({ error: 'Gagal mengambil data wallet' });
   }
-  if (action === 'history') {
-    return res.json({ transactions: await store.listTransactions(uid) });
-  }
-  return res.status(400).json({ error: 'Aksi tidak dikenal untuk /api/wallet' });
 };

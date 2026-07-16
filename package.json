@@ -1,7 +1,7 @@
 {
-  "name": "e-kamatho-majer",
-  "version": "2.0.0",
-  "description": "Pi Testnet Top Up → TransFi Offramp (Pi→IDR) → Saldo Rupiah → Payout Merchant",
+  "name": "e-kamatho",
+  "version": "3.0.0",
+  "description": "Dompet Pi & Rupiah — TransFi menangani konversi di belakang layar",
   "private": true,
   "main": "backend/server.js",
   "scripts": {

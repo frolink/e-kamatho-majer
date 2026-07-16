@@ -39,6 +39,7 @@ const crypto = require('crypto');
 const TRANSFI_BASE_URL = process.env.TRANSFI_BASE_URL || 'https://api-sandbox.transfi.com';
 const TRANSFI_USERNAME = process.env.TRANSFI_USERNAME; // dari displai.transfi.com -> Settings -> API Credentials
 const TRANSFI_PASSWORD = process.env.TRANSFI_PASSWORD; // pasangan Basic Auth, beda untuk sandbox vs production
+const TRANSFI_MID = process.env.TRANSFI_MID;
 const TRANSFI_API_SECRET = process.env.TRANSFI_API_SECRET; // TERPISAH dari username/password di atas — dipakai HANYA untuk signing widget URL & verifikasi signature webhook, BUKAN untuk otentikasi request API biasa
 const TRANSFI_WIDGET_BASE_URL = process.env.TRANSFI_WIDGET_BASE_URL || 'https://widget.transfi.com';
 
@@ -53,7 +54,8 @@ function authClient() {
     headers: {
       accept: 'application/json',
       'Content-Type': 'application/json',
-      Authorization: `Basic ${basic}`
+      Authorization: `Basic ${basic}`,
+      MID: TRANSFI_MID
     }
   });
 }
@@ -81,19 +83,21 @@ async function getPaymentMethods(currency, direction = 'withdraw') {
 // Cache in-memory sederhana (hidup selama instance serverless "hangat")
 // supaya tidak boros kuota API gratis TransFi kalau banyak orang cek kurs
 // dalam rentang waktu berdekatan. TTL pendek karena kurs kripto berubah cepat.
+const PI_FIXED_RATE = 5000000; // 1 PI = Rp5.000.000
+
 const rateCache = new Map();
 const RATE_CACHE_TTL_MS = 30_000;
 
-async function getExchangeRate({ cryptoTicker, fiatTicker, amount }) {
-  const key = `${cryptoTicker}_${fiatTicker}_${amount}`;
-  const cached = rateCache.get(key);
-  if (cached && Date.now() - cached.at < RATE_CACHE_TTL_MS) return cached.data;
+async function getExchangeRate({ amount }) {
+  amount = Number(amount);
 
-  const res = await authClient().get('/v3/exchange-rates/crypto-to-fiat', {
-    params: { cryptoTicker, fiatTicker, amount }
-  });
-  rateCache.set(key, { at: Date.now(), data: res.data });
-  return res.data; // { message: { success, data: { receiveFiatAmount, cryptoPrice, totalFee, ... } } }
+  return {
+    success: true,
+    cryptoPrice: PI_FIXED_RATE,
+    receiveFiatAmount: Math.floor(amount * PI_FIXED_RATE),
+    totalFee: 0,
+    rateSource: "Ekamatho Fixed Rate"
+  };
 }
 
 /**

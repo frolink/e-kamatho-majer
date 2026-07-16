@@ -1,3 +1,6 @@
 node_modules/
+.env
 .vercel/
-.env*
+*.bak
+*.bak2
+*.bak-ui

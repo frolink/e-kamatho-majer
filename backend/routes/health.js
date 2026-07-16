@@ -1,12 +1,10 @@
 /**
  * GET /api/health
- * Endpoint sederhana untuk cek backend hidup.
+ * Dipakai untuk cek apakah server berjalan (uptime check / CI).
  */
+const { handleCors } = require('../middleware/cors');
+
 module.exports = async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
-  return res.status(200).json({
-    ok: true,
-    network: process.env.PI_SANDBOX === 'false' ? 'mainnet' : 'testnet',
-    time: new Date().toISOString()
-  });
+  if (handleCors(req, res, 'GET, OPTIONS')) return;
+  return res.status(200).json({ status: 'ok', ts: new Date().toISOString() });
 };
