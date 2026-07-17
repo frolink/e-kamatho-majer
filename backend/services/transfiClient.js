@@ -146,7 +146,8 @@ async function createOfframpOrder({
   const res = await authClient().post('/v3/orders', {
     partnerId: customerOrderId,
     orderType: 'offramp',
-    purposeCode: 'personal_payment',
+    userId: 'UX-' + customerOrderId,
+    purposeCode: 'personal',
     customerMetaData: {
       customerName: customerName || 'E-Kamatho User'
     },
