@@ -157,8 +157,7 @@ async function createOfframpOrder({
       walletAddress: process.env.PI_WALLET_ADDRESS
     },
     destination: {
-      currency: withdrawCurrency,
-      amount: depositAmount
+      currency: withdrawCurrency
     }
   });
 
