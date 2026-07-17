@@ -136,16 +136,32 @@ function namesMatch(nameA, nameB) {
  * customerOrderId dipakai sebagai referensi balik ke paymentId Pi kita,
  * supaya waktu webhook masuk kita tahu top up mana yang harus di-settle.
  */
-async function createOfframpOrder({ customerOrderId, cryptoTicker = 'PI', depositAmount, withdrawCurrency = 'IDR', customerName }) {
+async function createOfframpOrder({
+  customerOrderId,
+  cryptoTicker = 'PI',
+  depositAmount,
+  withdrawCurrency = 'IDR',
+  customerName
+}) {
   const res = await authClient().post('/v3/orders', {
-    type: 'sell',
-    depositCurrency: cryptoTicker,
-    depositAmount,
-    withdrawCurrency,
-    customerOrderId,
-    customerName: customerName || undefined
+    partnerId: customerOrderId,
+    orderType: 'offramp',
+    purposeCode: 'personal_payment',
+    customerMetaData: {
+      customerName: customerName || 'E-Kamatho User'
+    },
+    source: {
+      currency: cryptoTicker,
+      amount: depositAmount,
+      walletAddress: process.env.PI_WALLET_ADDRESS
+    },
+    destination: {
+      currency: withdrawCurrency,
+      amount: depositAmount
+    }
   });
-  return res.data; // diharapkan berisi orderId + depositAddress (alamat TransFi utk menerima Pi)
+
+  return res.data;
 }
 
 /**
