@@ -36,7 +36,8 @@ async function verifyUserAccessToken(accessToken) {
     headers: { Authorization: `Bearer ${accessToken}` },
     timeout: 15000
   });
-  return res.data; // { uid, username, credentials: { scopes, valid_until } }
+  console.log("PI /v2/me =", JSON.stringify(res.data, null, 2));
+  return res.data;
 }
 
 async function getPayment(paymentId) {
