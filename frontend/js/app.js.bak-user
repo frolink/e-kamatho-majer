@@ -144,6 +144,6 @@ function pickM(name, el) {
   document.querySelectorAll('.merchant-chip').forEach(c=>c.classList.remove('on'));
   el.classList.add('on');
 }
-function showProfile() { toast(S.user ? '@'+S.user.username+' · '+S.user.uid.slice(0,10)+'…' : 'Belum login'); }
+function showProfile() { toast('@'+S.user.username+' · '+S.user.uid.slice(0,10)+'…'); }
 function openNotif()  { document.getElementById('novlay').classList.add('open');  document.getElementById('npanel').classList.add('open'); }
 function closeNotif() { document.getElementById('novlay').classList.remove('open'); document.getElementById('npanel').classList.remove('open'); }
