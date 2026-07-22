@@ -31,6 +31,9 @@ const TopUp = (() => {
       const payData = { amount:amt, memo:'Top Up Ekamatho ('+amt+' π)', metadata:{ type:'topup', pi_amount:amt, timestamp: new Date().toISOString() } };
       pStep(1,'act','Pi.createPayment()','Membuat payment di Pi Network');
       await new Promise((res,rej) => {
+      console.log("Pi SDK =", Pi);
+      console.log("Current User =", S.user);
+      console.log("Access Token =", sessionStorage.getItem("pi_access_token"));
         Pi.createPayment(payData, {
           onReadyForServerApproval: async (paymentId) => {
             pStep(1,'done'); pStep(2,'act','Backend Approve','/api/pi');

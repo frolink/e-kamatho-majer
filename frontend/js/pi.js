@@ -66,7 +66,8 @@ const PiAuth = (() => {
       await new Promise(r=>setTimeout(r,200));
       setStatus('Menunggu persetujuan di Pi Browser…');
       setBtn('<div class="btn-pi-mark">π</div> Menunggu…', true);
-      sessionStorage.clear();
+      sessionStorage.removeItem("pi_user");
+sessionStorage.removeItem("pi_access_token");
       const auth = await Pi.authenticate(['username','payments'], async (inc) => {
         console.warn('[Auth] Incomplete payment:', inc.identifier);
         try {
@@ -77,6 +78,8 @@ const PiAuth = (() => {
         } catch(e){ console.warn('[Auth] complete incomplete:', e); }
       });
       if(!auth?.accessToken) throw new Error('Tidak ada access token');
+      console.log("Scopes:", auth.scopes);
+      console.log("Access Token:", auth.accessToken);
       console.log("AUTH =", auth);
       setStatus('Login ke Ekamatho…');
       const login=await fetch('/api/auth',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ accessToken: auth.accessToken }) });
@@ -84,6 +87,7 @@ const PiAuth = (() => {
       const appUser=app.user;
       await fetchAppBalance(appUser.uid);
       setStatus('Login berhasil','ok');
+      setPiToken(auth.accessToken);
       onSuccess(appUser, auth.accessToken);
     } catch(err){
       console.error('[Auth]', err);
@@ -133,7 +137,8 @@ const PiAuth = (() => {
 })();
 
 function logout() {
-  sessionStorage.clear();
+  sessionStorage.removeItem("pi_user");
+sessionStorage.removeItem("pi_access_token");
 
   if (window.Pi && typeof Pi.unauthenticate === "function") {
     Pi.unauthenticate();
