@@ -84,7 +84,7 @@ sessionStorage.removeItem("pi_access_token");
       setStatus('Login ke Ekamatho…');
       const login=await fetch('/api/auth',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ accessToken: auth.accessToken }) });
       const app=await login.json();
-      console.log("AUTH RESPONSE =", app);
+      alert(JSON.stringify(app)); console.log("AUTH RESPONSE =", app);
       const appUser=app.user;
       if(!appUser?.uid){
         throw new Error("User Pi tidak memiliki UID dari backend");
