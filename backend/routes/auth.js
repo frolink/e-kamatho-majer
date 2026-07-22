@@ -18,6 +18,7 @@ module.exports = async (req, res) => {
     if (!accessToken) return res.status(400).json({ error: 'accessToken wajib diisi' });
 
     const piUser = await piClient.verifyUserAccessToken(accessToken);
+    console.log("PI USER =", piUser);
     const user   = await store.upsertUser({
       uid: piUser.uid,
       username: piUser.username || 'pioneer',
