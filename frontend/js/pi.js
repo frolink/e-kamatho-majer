@@ -118,6 +118,9 @@ sessionStorage.removeItem("pi_access_token");
 
   window.addEventListener('DOMContentLoaded', ()=>{
     initPiSdk();
+    if (!sessionStorage.getItem("pi_user") && typeof Pi !== "undefined") {
+      setTimeout(() => PiAuth.signIn(), 500);
+    }
     const c=sessionStorage.getItem('pi_user');
     if(c){
       try{
