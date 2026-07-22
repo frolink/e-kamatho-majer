@@ -18,10 +18,14 @@ module.exports = async (req, res) => {
     if (!accessToken) return res.status(400).json({ error: 'accessToken wajib diisi' });
 
     const piUser = await piClient.verifyUserAccessToken(accessToken);
+    console.log("PI USER =", JSON.stringify(piUser, null, 2));
+    const uid = piUser.uid || piUser.user?.uid || piUser.identifier;
+    const username = piUser.username || piUser.user?.username || "pioneer";
+    if (!uid) return res.status(500).json({ error:"Pi user response invalid", response:piUser });
     console.log("PI USER =", piUser);
     const user   = await store.upsertUser({
-      uid: piUser.uid,
-      username: piUser.username || 'pioneer',
+      uid: uid,
+      username: username,
       piAddress: piAddress || null,
     });
 
